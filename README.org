@@ -1,7 +1,43 @@
+#+TITLE: ulogger
+#+AUTHOR: Yoshinari Nomura
+#+EMAIL:
+#+DATE: 2018-07-11
+#+OPTIONS: H:3 num:2 toc:nil
+#+OPTIONS: ^:nil @:t \n:nil ::t |:t f:t TeX:t
+#+OPTIONS: skip:nil
+#+OPTIONS: author:t
+#+OPTIONS: email:nil
+#+OPTIONS: creator:nil
+#+OPTIONS: timestamp:nil
+#+OPTIONS: timestamps:nil
+#+OPTIONS: d:nil
+#+OPTIONS: tags:t
+#+TEXT:
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE: ja
+#+LATEX_CLASS: jsarticle
+#+LATEX_CLASS_OPTIONS: [a4j,dvipdfmx]
+# #+LATEX_HEADER: \usepackage{plain-article}
+# #+LATEX_HEADER: \renewcommand\maketitle{}
+# #+LATEX_HEADER: \pagestyle{empty}
+# #+LaTeX: \thispagestyle{empty}
 
-* setup .env
-  THINGSPEAK_API_KEY
-   
-* Setup dependencies
-git clone https://github.com/yoshinari-nomura/beacon_scanner.git (fetch)
-git clone https://github.com/adafruit/Adafruit_Python_SSD1306.git 
+TBA...
+
+* Setup
+** Setup =.env= file
+   #+BEGIN_SRC shell-script
+     ULOGGER_THINGSPEAK_API_KEY="XXXXXXXXXXXXXXXX"
+     ULOGGER_ROOM_NAME="205"
+   #+END_SRC
+
+** Setup dependencies
+   #+BEGIN_SRC shell-script
+     git clone https://github.com/yoshinari-nomura/beacon_scanner.git
+     git clone https://github.com/adafruit/Adafruit_Python_SSD1306.git
+   #+END_SRC
+
+* Setup thingspeak.com
+
+* Launch
