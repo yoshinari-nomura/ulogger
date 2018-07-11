@@ -6,7 +6,7 @@ room="$1"
 api_key="$2"
 
 if [ -z "$room" -o -z "$api_key" ]; then
-  echo "Usage: launch_all ROOM SINGSPEAK_API_KEY" 1>&2
+  echo "Usage: launch_all ROOM THINGSPEAK_API_KEY" 1>&2
   exit 1
 fi
 
