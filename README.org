@@ -1,0 +1,7 @@
+
+* setup .env
+  THINGSPEAK_API_KEY
+   
+* Setup dependencies
+git clone https://github.com/yoshinari-nomura/beacon_scanner.git (fetch)
+git clone https://github.com/adafruit/Adafruit_Python_SSD1306.git 
