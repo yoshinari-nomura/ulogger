@@ -1,8 +1,10 @@
-#+TITLE: ulogger
+#+TITLE: ulogger README
 #+AUTHOR: Yoshinari Nomura
-#+EMAIL:
-#+DATE: 2018-07-11
-#+OPTIONS: H:3 num:2 toc:nil
+#+EMAIL: nom@cs.okayama-u.ac.jp
+#+DATE: 2017-06-07
+#+SETUPFILE: theme-readtheorg-local.setup
+# #+OPTIONS: H:3 num:2 toc:nil
+#+OPTIONS: H:3 num:2
 #+OPTIONS: ^:nil @:t \n:nil ::t |:t f:t TeX:t
 #+OPTIONS: skip:nil
 #+OPTIONS: author:t
@@ -15,29 +17,392 @@
 #+TEXT:
 #+DESCRIPTION:
 #+KEYWORDS:
-#+LANGUAGE: ja
-#+LATEX_CLASS: jsarticle
-#+LATEX_CLASS_OPTIONS: [a4j,dvipdfmx]
-# #+LATEX_HEADER: \usepackage{plain-article}
+#+LANGUAGE: en
+#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS: [dvipdfmx]
+#+LATEX_HEADER: \usepackage{plain-article}
 # #+LATEX_HEADER: \renewcommand\maketitle{}
 # #+LATEX_HEADER: \pagestyle{empty}
 # #+LaTeX: \thispagestyle{empty}
 
-TBA...
+* Project summary
+  + Setup sensor node using Raspberry Pi
+  + Create your own dashboard page using Ruby on Rails
 
-* Setup
-** Setup =.env= file
-   #+BEGIN_SRC shell-script
-     ULOGGER_THINGSPEAK_API_KEY="XXXXXXXXXXXXXXXX"
-     ULOGGER_ROOM_NAME="205"
-   #+END_SRC
+* Setup Raspberry Pi software
+** Download OS
+   + [[https://www.raspberrypi.org/downloads/raspbian/][Download Raspbian for Raspberry Pi]]
+   + Chose minimum install (Raspbian Jessie Lite)
 
-** Setup dependencies
-   #+BEGIN_SRC shell-script
-     git clone https://github.com/yoshinari-nomura/beacon_scanner.git
-     git clone https://github.com/adafruit/Adafruit_Python_SSD1306.git
-   #+END_SRC
+** Write boot image to SD memory storage
+   + [[https://www.raspberrypi.org/documentation/installation/installing-images/linux.md][Installing operating system images on Linux]]
+   + [[https://www.raspberrypi.org/documentation/installation/installing-images/mac.md][Installing operating system images on Mac OS]]
+     : diskutil unmountDisk /dev/diskX
+     : sudo dd bs=1m if=2017-09-07-raspbian-stretch.img of=/dev/diskX conv=sync
+     : diskutil unmountDisk /dev/diskX
+   + [[https://www.raspberrypi.org/documentation/installation/installing-images/windows.md][Installing operating system images using Windows]]
 
-* Setup thingspeak.com
+** Boot and initial settings
+   + Username: pi, Password: raspberry
 
-* Launch
+   + Upgrade packages
+     #+BEGIN_SRC shell-script
+       sudo apt-get update
+       sudo apt-get upgrade
+     #+END_SRC
+
+   + Setup ssh, timzezone, hostname...
+     #+BEGIN_SRC shell-script
+       sudo raspi-config
+     #+END_SRC
+     + Enable ssh
+     + hostname => pi106
+     + timezone => Asia/Tokyo
+
+   + Install additional packages
+     #+BEGIN_SRC shell-script
+       sudo apt-get install zsh git-core ruby ruby-dev screen lsof
+     #+END_SRC
+
+   + Change shell to zsh (optional)
+     #+BEGIN_SRC shell-script
+       chsh
+     #+END_SRC
+
+** Copy your personal RC files
+   + If you have your own setup files of shells, ssh..., copy to Pi.
+     #+BEGIN_SRC shell-script
+       scp ~/.ssh/authorized_keys pi@pi106.local:.ssh/
+       scp ~/.screenrc  ~/.zshenv ~/.zshrc ~/.zaliases \
+           ~/.zcomplete ~/.zlogin ~/.zlogout pi@pi106.local:
+     #+END_SRC
+
+** Install Ruby via rbenv
+   + For details: https://github.com/rbenv/ruby-build/wiki
+     #+BEGIN_SRC shell-script
+       git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+       git clone https://github.com/rbenv/ruby-build.git \
+                   ~/.rbenv/plugins/ruby-build
+       sudo apt-get install autoconf bison build-essential libssl-dev \
+                      libyaml-dev libreadline-dev zlib1g-dev \
+                      libncurses5-dev libffi-dev libgdbm3 libgdbm-dev
+       rbenv install 2.4.1
+     #+END_SRC
+
+   + Add rbenv setup in .zshenv or .bashrc:
+     #+BEGIN_SRC shell-script
+       if [[ -x  ~/.rbenv/bin/rbenv ]]; then
+         # rbenv
+         path=(~/.rbenv/bin $path)
+         eval "$(rbenv init -)"
+         RUBY_DISPATCHER="rbenv"
+       fi
+     #+END_SRC
+
+   + Check ruby 2.4.1 is enabled, and install bundler
+     #+BEGIN_SRC shell-script
+       rbenv local 2.4.1
+       ruby -v # 2.4.1?
+       gem install bundler
+     #+END_SRC
+
+** Install additional Debian packages
+   + Install Redis KVS server
+     #+BEGIN_SRC shell-script
+       sudo apt-get install redis-server
+     #+END_SRC
+
+** Install bluetooth device
+   + Install
+     #+BEGIN_SRC shell-script
+       sudo apt-get install bluez libbluetooth-dev
+     #+END_SRC
+
+   + Check if bluetooth is enabled
+     #+BEGIN_SRC shell-script
+       sudo hcitool lescan
+     #+END_SRC
+     (List up the bluetooth MAC addresses of nearby devices)
+
+   + Before Rasbperry Pi 3, you have to install USB bluetooth dongle.
+     + (example) PLANEX Bluetooth USB adaptor BT-Micro4
+       https://www.amazon.co.jp/dp/B0071TE1G2
+
+* Install Sensors to Raspbery Pi
+** Check hardware pin assignments
+   + [[https://pinout.xyz/#][Raspberry Pi GPIO Pinout]]
+   + pin 7 is BCM 4 is GPIO 4
+   + [[https://raspberrypi.stackexchange.com/questions/12966/what-is-the-difference-between-board-and-bcm-for-gpio-pin-numbering][What is the difference between BOARD and BCM for GPIO pin numbering?]]
+
+** Connect DS18B20 temperature sensor to Pi
+
+   + Enable 1-wire interface of Pi
+     #+BEGIN_SRC shell-script
+       sudo raspi-config
+       # 5 Interfacing Options -> P7 1-Wire
+       # "dtoverlay=w1-gpio" will be added to /boot/config.txt
+       # After reboot, 1-wire interface will be enabled.
+       sudo reboot
+     #+END_SRC
+
+   + Wire DS18B20 to Pi
+     + [[https://learn.adafruit.com/adafruits-raspberry-pi-lesson-11-ds18b20-temperature-sensing/hardware][Adafruit's Raspberry Pi Lesson 11. DS18B20 Temperature Sensing]]
+     + [[https://pinout.xyz/pinout/1_wire#][1-WIRE at Raspberry Pi GPIO Pinout]]
+     + [[https://colo-ri.jp/develop/2016/05/raspberry-pi-ds18b20.html][Raspberry Pi + DS18B20 (in Japanese)]]
+
+   + Read via shell command line
+     #+BEGIN_SRC shell-script
+       # Find 1-wire device
+       cd /sys/bus/w1/devices
+       ls
+       28-0116075989ee
+       # Read data from 28-0116075989ee
+       cd 28-0116075989ee
+       cat w1_slave
+       # t=25250 means 25.250 degrees in Celsius.
+       94 01 4b 46 7f ff 0c 10 26 : crc=26 YES
+       94 01 4b 46 7f ff 0c 10 26 t=25250
+     #+END_SRC
+
+   + Shell script to read data and store to Redis
+
+     read-temperature-ds18b20.sh:
+     #+BEGIN_SRC shell-script :tangle "scripts/read-temperature-ds18b20.sh" :padline no
+       #!/bin/sh
+
+       # Usage: read-temperature-ds18b20.sh {device_file} {room_number}
+       # read-temperature-ds18b20.sh /sys/bus/w1/devices/28-0116075989ee 106
+
+       DEVICE_DIR="$1"
+       DEVICE_FILE="$1/w1_slave"
+       DEVICE_ROOM="$2"
+       REDIS_KEY="sensor.room.$DEVICE_ROOM.temperature"
+
+       calc() {
+         awk "BEGIN {print $1}"
+       }
+
+       get_temperature() {
+         local device_file="$1"
+         temp=$(cat "$device_file" | sed -n 's/.*t=\([0-9]*\)/\1/p')
+         calc "$temp / 1000"
+       }
+
+       while true
+       do
+         value=$(get_temperature "$DEVICE_FILE")
+
+         if [ "$current_value" != "$value" ]; then
+           current_value="$value"
+           redis-cli --raw set "$REDIS_KEY" "$current_value" > /dev/null
+         fi
+
+         echo "$(date): $current_value celsius"
+         sleep 10
+       done
+     #+END_SRC
+
+     Repeatedly write to redis
+     #+BEGIN_SRC shell-script
+       ./read-temperature-ds18b20.sh /sys/bus/w1/devices/28-0116075989ee 106
+     #+END_SRC
+
+** Connect BH1750 I2C light intensity sensor to Pi
+   + References:
+     + [[http://aitendo3.sakura.ne.jp//aitendo_data/product_img/sensor/BH1750/BH1750FVI.pdf][BH1750 Datasheet]]
+     + [[http://www.raspberrypi-spy.co.uk/2015/03/bh1750fvi-i2c-digital-light-intensity-sensor/][BH1750FVI I2C Digital Light Intensity Sensor]]
+     + [[https://pinout.xyz/pinout/i2c#][I2C at Raspberry Pi GPIO Pinout]]
+     + [[https://www.qoosky.io/techs/2316d68b2e][How to enable I2C on Raspberry Pi (in Japanese)]]
+     + [[http://qiita.com/satorukun/items/a6c67e3e5fd67edf1800][Raspberry Pi + BH1750 (in Japanese)]]
+
+   + Enable I2C on Pi
+     #+BEGIN_SRC shell-script
+       # enable I2C
+       # 5 Interfacing Options -> P5 I2C
+       sudo raspi-config
+
+       # install i2cget/set
+       sudo apt-get update
+       sudo apt-get install -y i2c-tools
+
+       # list I2C buses
+       sudo i2cdetect -l
+
+       # scan I2C bus 1
+       sudo i2cdetect -y 1
+     #+END_SRC
+
+   + Find I2C device address
+     #+BEGIN_EXAMPLE
+            0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+       00:          -- -- -- -- -- -- -- -- -- -- -- -- --
+       10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+       20: -- -- -- 23 -- -- -- -- -- -- -- -- -- -- -- --
+       30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+       40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+       50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+       60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+       70: -- -- -- -- -- -- -- --
+     #+END_EXAMPLE
+     I2C device ID is 0x23
+
+   + Read I2C by Shell script
+
+     read-light-bh1750.sh:
+     #+BEGIN_SRC shell-script :tangle "scripts/read-light-bh1750.sh" :padline no
+       #!/bin/sh
+
+       calc() {
+         awk "BEGIN {print $1}"
+       }
+
+       get_light_intensity() {
+         local device_address="$1"
+
+         # Command 0x01 -- power ON
+         sudo i2cset -y 1 $device_address 0x01 c
+         sleep 1
+
+         # Command 0x20 -- set ONETIME_H_RESOLUTION_MODE
+         #   Start measurement at 1lx resolution. Time typically 120ms
+         #   Device is automatically set to Power Down after measurement.
+         # cf. BH1750 Datasheet P.17
+         sudo i2cset -y 1 $device_address 0x20 c
+         sleep 1
+
+         local VAL=$(i2cget -y 1 $device_address 0x00 w)
+         local MSB="0x$(echo $VAL | cut -c 5-6)"
+         local LSB="0x$(echo $VAL | cut -c 3-4)"
+         IL=$(( ($MSB << 8) | $LSB ))
+
+         calc "$IL / 1.2"
+       }
+
+       device_address="$1"
+       DEVICE_ROOM="$2"
+       REDIS_KEY="sensor.room.$DEVICE_ROOM.light"
+
+       while true
+       do
+         value=$(get_light_intensity "$device_address")
+
+         if [ "$current_value" != "$value" ]; then
+           current_value="$value"
+           redis-cli --raw set "$REDIS_KEY" "$current_value" > /dev/null
+         fi
+
+         echo "$(date): $current_value lux"
+         sleep 10
+       done
+     #+END_SRC
+
+     Repeatedly write to redis
+     #+BEGIN_SRC shell-script
+       ./read-light-bh1750.sh 0x23 106
+     #+END_SRC
+
+** Connect RN4020 bluetooth beacon as sensor to Pi
+   + Setup bluetooth beacon scanner
+     #+BEGIN_SRC shell-script
+       git clone https://github.com/yoshinari-nomura/beacon_scanner.git
+       cd /home/pi/beacon_scanner
+       bundle install --path vendor/bundle
+       ./bin/beacon_scanner.rb --redis sensor.room.106
+     #+END_SRC
+
+** Connect to Thingspeak and upload
+   + Shell script to read redis and push them to Thingspeak
+
+     push-to-thingspeak.sh:
+     #+BEGIN_SRC shell-script :tangle "scripts/push-to-thingspeak.sh" :padline no
+       #!/bin/sh
+
+       # usage: ./push-to-thingspeak.sh API_KEY field1_redis_name field2_redis_name ...
+       # ./push-to-thingspeak.sh XXXXXXXX sensor.room.106.temperature \
+       #                                  sensor.room.106.light \
+       #                                  door.106
+
+       field_values() {
+         local api_key="$1" ; shift
+         local request="https://api.thingspeak.com/update?api_key=$api_key"
+
+         for n in 1 2 3 4 5 6 7 8
+         do
+           redis_key="$1" ; shift
+           if [ -n "$redis_key" ]; then
+             value=$(redis-cli --raw get $redis_key)
+             if [ -n "$value" ]; then
+               request="$request&field$n=$value"
+             fi
+           fi
+         done
+         echo "$request"
+       }
+
+       API_KEY="$1" ; shift
+       REDIS_KEYS="$*"
+
+       while true
+       do
+         request=$(field_values $API_KEY $REDIS_KEYS)
+         echo "$(date): $request"
+         curl -S -s -X GET "$request" >/dev/null
+         sleep 60
+       done
+     #+END_SRC
+
+   + Push sensor data to Thingspeak
+     #+BEGIN_SRC shell-script
+       # API_KEY is XXXXXXXXXXXXXXXX redis_key1 redis_key2 redis_key3...
+       ./push-to-thingspeak.sh XXXXXXXXXXXXXXXX \
+                               sensor.room.106.temperature \
+                               sensor.room.106.light \
+                               door.106
+     #+END_SRC
+
+* Create your own dashboard page using Ruby on Rails
+
+  Complete https://www.railstutorial.org/book
+  + Using Github (not Bitbucket) and Dropbox (not S3)
+
+* Add I2C OELD Display to Raspberry PI
+  TBA...
+
+  + [[https://learn.adafruit.com/ssd1306-oled-displays-with-raspberry-pi-and-beaglebone-black?view=all][SSD1306 OLED Displays with Raspberry Pi...]]
+  : cd example
+  : python status.py
+
+  Install Japanese Font:
+  : sudo apt-get install fonts-ipafont fonts-ipaexfont
+  : ls /usr/share/fonts/opentype/ipafont*
+
+  #+BEGIN_SRC shell-script
+    % ls /usr/share/fonts/opentype/ipa*
+    /usr/share/fonts/opentype/ipaexfont-gothic:
+    ipaexg.ttf
+
+    /usr/share/fonts/opentype/ipaexfont-mincho:
+    ipaexm.ttf
+
+    /usr/share/fonts/opentype/ipafont-gothic:
+    ipagp.ttf  ipag.ttf
+
+    /usr/share/fonts/opentype/ipafont-mincho:
+    ipamp.ttf  ipam.ttf
+  #+END_SRC
+
+  [[https://snippets.aktagon.com/snippets/197-how-to-add-a-text-caption-to-an-image-with-minimagick-and-ruby][How to add a text caption to an image with MiniMagick and Ruby]]
+
+* Everything to go
+  #+BEGIN_SRC shell-script
+  # XXXXXXXXXXXXXXXX is your Singspeak API key
+  (\
+    bin/beacon_scanner.rb --redis sensor.room.106                  &\
+    ./read-temp-ds18b20.sh /sys/bus/w1/devices/28-0116106c44ee 106 &\
+    ./read-light-bh1750.sh 0x23 106                                &\
+    ./push-to-thingspeak.sh XXXXXXXXXXXXXXXX                       \
+       sensor.room.106.temperature                                 \
+       sensor.room.106.light                                       \
+       sensor.room.106.locked                                      &\
+   ) > sensor.room.106.log
+  #+END_SRC
