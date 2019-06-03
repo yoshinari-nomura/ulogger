@@ -360,6 +360,20 @@
                                door.106
      #+END_SRC
 
+* Everything to go
+  #+BEGIN_SRC shell-script
+  # XXXXXXXXXXXXXXXX is your Singspeak API key
+  (\
+    bin/beacon_scanner.rb --redis sensor.room.106                  &\
+    ./read-temp-ds18b20.sh /sys/bus/w1/devices/28-0116106c44ee 106 &\
+    ./read-light-bh1750.sh 0x23 106                                &\
+    ./push-to-thingspeak.sh XXXXXXXXXXXXXXXX                       \
+       sensor.room.106.temperature                                 \
+       sensor.room.106.light                                       \
+       sensor.room.106.locked                                      &\
+   ) > sensor.room.106.log
+  #+END_SRC
+
 * Create your own dashboard page using Ruby on Rails
 
 ** Complete https://www.railstutorial.org/book
@@ -367,8 +381,9 @@
 
 ** Create Thingspeak compatible API in your Rails APP
    + Show 2D graph data in your Rails app.
+   + [[https://snippets.aktagon.com/snippets/197-how-to-add-a-text-caption-to-an-image-with-minimagick-and-ruby][How to add a text caption to an image with MiniMagick and Ruby]]
 
-* (*Optoinal*) Add I2C OELD Display to Raspberry PI
+* (*Optoinal*) Add I2C OELD Display to Raspberry PI fo Debug
   TBA...
 
   + [[https://learn.adafruit.com/ssd1306-oled-displays-with-raspberry-pi-and-beaglebone-black?view=all][SSD1306 OLED Displays with Raspberry Pi...]]
@@ -392,20 +407,4 @@
 
     /usr/share/fonts/opentype/ipafont-mincho:
     ipamp.ttf  ipam.ttf
-  #+END_SRC
-
-  [[https://snippets.aktagon.com/snippets/197-how-to-add-a-text-caption-to-an-image-with-minimagick-and-ruby][How to add a text caption to an image with MiniMagick and Ruby]]
-
-* Everything to go
-  #+BEGIN_SRC shell-script
-  # XXXXXXXXXXXXXXXX is your Singspeak API key
-  (\
-    bin/beacon_scanner.rb --redis sensor.room.106                  &\
-    ./read-temp-ds18b20.sh /sys/bus/w1/devices/28-0116106c44ee 106 &\
-    ./read-light-bh1750.sh 0x23 106                                &\
-    ./push-to-thingspeak.sh XXXXXXXXXXXXXXXX                       \
-       sensor.room.106.temperature                                 \
-       sensor.room.106.light                                       \
-       sensor.room.106.locked                                      &\
-   ) > sensor.room.106.log
   #+END_SRC
