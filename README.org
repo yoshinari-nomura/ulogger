@@ -301,7 +301,7 @@
        ./read-light-bh1750.sh 0x23 106
      #+END_SRC
 
-** Connect RN4020 bluetooth beacon as sensor to Pi
+** (*Optional*) Connect RN4020 bluetooth beacon as sensor to Pi
    + Setup bluetooth beacon scanner
      #+BEGIN_SRC shell-script
        git clone https://github.com/yoshinari-nomura/beacon_scanner.git
@@ -362,10 +362,13 @@
 
 * Create your own dashboard page using Ruby on Rails
 
-  Complete https://www.railstutorial.org/book
-  + Using Github (not Bitbucket) and Dropbox (not S3)
+** Complete https://www.railstutorial.org/book
+   + Using Github (not Bitbucket) and Dropbox (not S3)
 
-* Add I2C OELD Display to Raspberry PI
+** Create Thingspeak compatible API in your Rails APP
+   + Show 2D graph data in your Rails app.
+
+* (*Optoinal*) Add I2C OELD Display to Raspberry PI
   TBA...
 
   + [[https://learn.adafruit.com/ssd1306-oled-displays-with-raspberry-pi-and-beaglebone-black?view=all][SSD1306 OLED Displays with Raspberry Pi...]]
