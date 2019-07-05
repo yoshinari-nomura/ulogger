@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 export PATH="$HOME/beacon_scanner/bin:$PATH"
 

@@ -168,7 +168,7 @@
 
      read-temperature-ds18b20.sh:
      #+BEGIN_SRC shell-script :tangle "scripts/read-temperature-ds18b20.sh" :padline no
-       #!/bin/sh
+       #!/bin/bash
 
        # Usage: read-temperature-ds18b20.sh {device_file} {room_number}
        # read-temperature-ds18b20.sh /sys/bus/w1/devices/28-0116075989ee 106
@@ -250,7 +250,7 @@
 
      read-light-bh1750.sh:
      #+BEGIN_SRC shell-script :tangle "scripts/read-light-bh1750.sh" :padline no
-       #!/bin/sh
+       #!/bin/bash
 
        calc() {
          awk "BEGIN {print $1}"
@@ -315,7 +315,7 @@
 
      push-to-thingspeak.sh:
      #+BEGIN_SRC shell-script :tangle "scripts/push-to-thingspeak.sh" :padline no
-       #!/bin/sh
+       #!/bin/bash
 
        # usage: ./push-to-thingspeak.sh API_KEY field1_redis_name field2_redis_name ...
        # ./push-to-thingspeak.sh XXXXXXXX sensor.room.106.temperature \

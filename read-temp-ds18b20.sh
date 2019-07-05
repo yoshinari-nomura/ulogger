@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Usage: read-temp-ds18b20.sh {device_file} {room_number}
 # read-temp-ds18b20.sh /sys/bus/w1/devices/28-0116075989ee 106
