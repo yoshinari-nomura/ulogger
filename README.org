@@ -383,7 +383,7 @@
    + Show 2D graph data in your Rails app.
    + [[https://snippets.aktagon.com/snippets/197-how-to-add-a-text-caption-to-an-image-with-minimagick-and-ruby][How to add a text caption to an image with MiniMagick and Ruby]]
 
-* (*Optoinal*) Add I2C OELD Display to Raspberry PI fo Debug
+* (*Optoinal*) Add I2C OELD Display to Raspberry PI for Debug
   TBA...
 
   + [[https://learn.adafruit.com/ssd1306-oled-displays-with-raspberry-pi-and-beaglebone-black?view=all][SSD1306 OLED Displays with Raspberry Pi...]]
